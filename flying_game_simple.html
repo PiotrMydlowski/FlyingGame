@@ -1,0 +1,156 @@
+<html>
+<head>
+<title>Flying game</title>
+</head>
+Simple flying game.
+<br>
+
+<!--creating a canvas--> 
+<canvas id="gameCanvas" width="800" height="600"></canvas>
+
+<!--entering JavaScript--> 
+<script>
+var canvas;
+var canvasContext;
+var score;
+var showFinalScreen;
+var highscore;
+var endText;
+var scoreText;
+var gameSpeed;
+var flyingHeight;
+var speedY;
+var obstacles = [0];
+
+const GRAVITY = 0.05;
+const FLYING_WIDTH = 100;
+const OBSTACLE_WIDTH = 10;
+const OBSTACLE_HEIGHT = 100;
+const DIFFICULTY = 100;
+const RAISE_VAL = 1;
+const OBSTACLE_AMOUNT = 5;
+const INITIAL_SPEED = 8;
+
+// main window onload function, starts after downloading
+window.onload = function(){
+	
+	highscore = 0;
+	canvas = document.getElementById('gameCanvas');
+	canvasContext = canvas.getContext('2d');
+	//getting canvas handles
+	gameInit();//setting game variables
+	canvasContext.font="30px Arial";//setting subtitles parameters
+	var framesPerSecond = 30;
+	setInterval(function(){
+	calculate();
+	drawCanvas();
+	}, 1000/framesPerSecond); //main loop refreshing screen and recalculating variables
+	
+	canvas.addEventListener('mousedown', mouseClickHandle);//action on click
+
+}
+
+function mouseClickHandle(evt){// handling mouse click
+	if(showFinalScreen){
+		gameInit();
+		return;
+	}
+	speedY += RAISE_VAL;//flying up on click
+}
+
+
+function calculate(){//main calculation function
+	if(showFinalScreen){
+		return;
+	}
+	if(flyingHeight >= canvas.height || flyingHeight <= 0){
+		showFinalScreen = 1;
+		if(score > highscore){
+			highscore = score;
+		}
+		return;//checking for flying out of the screen
+	}
+	score += 1;
+	if(score%DIFFICULTY == 0){
+		gameSpeed++;
+	}//game acceleration
+	speedY -= GRAVITY;
+	flyingHeight -= speedY;
+	//the games finishes in case of hitting the obstacle
+	for (let i=0; i<obstacles.length; i++) {
+		if( (obstacles[i][0] + gameSpeed>=FLYING_WIDTH-OBSTACLE_WIDTH)&&(obstacles[i][0]<=FLYING_WIDTH)&&(obstacles[i][1]>=flyingHeight-OBSTACLE_HEIGHT)&&(obstacles[i][1]<=flyingHeight) ){
+			showFinalScreen = 1;
+			if(score > highscore){
+				highscore = score;
+			}
+			return;
+		}    		
+	}
+	for (let i=0; i<obstacles.length; i++) {
+    		obstacles[i][0] -= gameSpeed;   		
+	}
+	//removing and replacing the obstacles over the left edge
+	if(obstacles[0][0] < 0){
+		obstacles.shift();
+		obstacles.push([canvas.width, Math.round (Math.random()*canvas.height) ]);		
+	}
+	//adding new obstacles if there's not enough of them 
+	if((obstacles.length < OBSTACLE_AMOUNT)&&(obstacles[obstacles.length-1][0] <= canvas.width - canvas.width/OBSTACLE_AMOUNT)){
+		obstacles.push([canvas.width, Math.round (Math.random()*canvas.height) ]);		
+	}
+	console.log(obstacles.length);	
+}
+
+
+
+function drawCanvas(){//main drawing function
+	
+	drawRect(0,0,canvas.width,canvas.height,'rgba(0,0,0,0.4)');//always draws black semi-transparent background
+
+	if(showFinalScreen){
+	canvasContext.fillStyle = 'white';
+	endText = "Your score: " + score +", highscore: " + highscore +" and final speed: "+ gameSpeed;
+	canvasContext.fillText(endText, canvas.width/10, canvas.height/3 );
+	return;
+	} //in case of end of the game
+
+	scoreText = "Your score: " + score;
+	canvasContext.fillStyle = 'white';
+	canvasContext.fillText(scoreText, OBSTACLE_WIDTH, OBSTACLE_HEIGHT );
+
+	drawCircle( FLYING_WIDTH, flyingHeight, 10,'red');//drawing the "plane"
+	
+	for (let i=0; i<obstacles.length; i++) {//drawing all obstacles
+    		drawRect(obstacles[i][0], obstacles[i][1], OBSTACLE_WIDTH, OBSTACLE_HEIGHT, 'white');    		
+	}
+	
+
+}
+
+function drawCircle(centerX, centerY, radius, drawColor){//additional drawing function
+	canvasContext.fillStyle = drawColor;
+	canvasContext.beginPath();
+	canvasContext.arc(centerX, centerY, radius, 0, Math.PI*2, true);
+	canvasContext.fill();
+}
+
+function drawRect(leftX, topY, width, height, drawColor){//additional drawing function
+	canvasContext.fillStyle = drawColor;
+	canvasContext.fillRect(leftX, topY, width, height);
+}
+
+function gameInit(){//game initiation
+	showFinalScreen = 0;// setting showing of the final screen
+	flyingHeight = canvas.height/2;
+	score = 0;
+	speedY = 0;
+	gameSpeed = INITIAL_SPEED;
+	obstacles = [0];//overwriting the old obstacles
+	obstacles.shift();//clearing the obstacle array
+	obstacles.push([canvas.width, Math.round (Math.random()*canvas.height) ]);//generating the first obstacle
+}
+
+//finishing script
+</script>
+
+</html>
